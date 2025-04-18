@@ -1,7 +1,6 @@
 import React from 'react';
 import Head from 'next/head';
 import Playground from '../src/pages/Playground';
-import '../src/styles/globals.css';
 
 export default function Home() {
   return (
