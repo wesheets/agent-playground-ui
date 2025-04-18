@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import AgentTimeline from '../components/AgentTimeline';
 import FileTree from '../components/FileTree';
 import PlaygroundStatusPanel from '../components/PlaygroundStatusPanel';
-import '../styles/globals.css';
 
 export default function Playground() {
   const [projectId, setProjectId] = useState('loop_validation_001');
