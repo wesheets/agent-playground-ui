@@ -301,6 +301,40 @@ export default function Playground() {
         }
         
         const data = await response.json();
+        
+        // Check if project_state is missing or empty (ghost polling detection)
+        if (!data.project_state || Object.keys(data.project_state).length === 0) {
+          console.warn(`⚠️ Invalid project ID detected: ${projectId} - Stopping polling`);
+          
+          // Clear polling intervals
+          if (pollingRef.current.status) {
+            clearInterval(pollingRef.current.status);
+            pollingRef.current.status = null;
+          }
+          if (pollingRef.current.state) {
+            clearInterval(pollingRef.current.state);
+            pollingRef.current.state = null;
+          }
+          
+          // Display warning to user
+          setError(`⚠️ Invalid project ID: polling stopped`);
+          
+          // Reset UI state but keep projectId to show the error
+          setProjectData(null);
+          setProjectState(null);
+          setActivityFeed(prev => {
+            const updatedFeed = [{
+              timestamp: new Date().toISOString(),
+              agent: 'system',
+              action: 'Polling stopped',
+              details: 'Invalid or deleted project detected'
+            }, ...prev];
+            return updatedFeed.slice(0, 10);
+          });
+          
+          return;
+        }
+        
         if (data.project_state) {
           // Store current values for comparison
           const currentLoopCount = data.project_state.loop_count || 0;
@@ -376,6 +410,26 @@ export default function Playground() {
     fetchProjectStatus();
     fetchProjectState();
     
+    // Add safety timeout - if no valid project state is returned in 10s, auto-clear poller
+    const safetyTimeout = setTimeout(() => {
+      if (!projectData) {
+        console.warn(`⚠️ Safety timeout: No valid project state returned in 10s for project ${projectId}`);
+        
+        // Clear polling intervals
+        if (pollingRef.current.status) {
+          clearInterval(pollingRef.current.status);
+          pollingRef.current.status = null;
+        }
+        if (pollingRef.current.state) {
+          clearInterval(pollingRef.current.state);
+          pollingRef.current.state = null;
+        }
+        
+        // Display warning to user
+        setError(`⚠️ Safety timeout: No valid project data received in 10s`);
+      }
+    }, 10000);
+    
     // Then set up polling every 5 seconds
     pollingRef.current.status = setInterval(fetchProjectStatus, 5000);
     pollingRef.current.state = setInterval(fetchProjectState, 10000);
@@ -384,6 +438,12 @@ export default function Playground() {
     
     // Clean up intervals on unmount or projectId change
     return () => {
+      // Clear safety timeout
+      if (safetyTimeout) {
+        clearTimeout(safetyTimeout);
+      }
+      
+      // Clear polling intervals
       if (pollingRef.current.status) {
         clearInterval(pollingRef.current.status);
         pollingRef.current.status = null;
