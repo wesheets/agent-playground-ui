@@ -3,6 +3,9 @@ import AgentTimeline from '../components/AgentTimeline';
 import FileTree from '../components/FileTree';
 import PlaygroundStatusPanel from '../components/PlaygroundStatusPanel';
 
+// Define the backend URL directly to avoid 404 errors on Vercel deployment
+const BACKEND_URL = 'https://web-production-2639.up.railway.app';
+
 export default function Playground() {
   const [projectId, setProjectId] = useState(null); // Changed to null by default to show landing page
   const [projectData, setProjectData] = useState(null);
@@ -68,8 +71,7 @@ export default function Playground() {
   // Download ZIP function
   const handleDownloadZip = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-2639.up.railway.app';
-      const response = await fetch(`${apiUrl}/api/project/export_zip?project_id=${projectId}`);
+      const response = await fetch(`${BACKEND_URL}/api/project/export_zip?project_id=${projectId}`);
       
       if (!response.ok) {
         throw new Error(`Failed to download ZIP: ${response.status}`);
@@ -104,8 +106,8 @@ export default function Playground() {
     
     try {
       setSubmittingPrompt(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-2639.up.railway.app';
-      const response = await fetch(`${apiUrl}/api/orchestrator/interpret`, {
+      // Use the direct backend URL to avoid 404 errors on Vercel deployment
+      const response = await fetch(`${BACKEND_URL}/api/orchestrator/interpret`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -171,8 +173,7 @@ export default function Playground() {
     if (!orchestratorResponse) return;
     
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-2639.up.railway.app';
-      const response = await fetch(`${apiUrl}/api/project/start`, {
+      const response = await fetch(`${BACKEND_URL}/api/project/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -220,7 +221,6 @@ export default function Playground() {
   useEffect(() => {
     const fetchProjectList = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-2639.up.railway.app';
         // This is a mock endpoint - in a real implementation, you would have an endpoint that returns all projects
         // For now, we'll just use a hardcoded list
         setProjectList(['loop_validation_001', 'loop_validation_002', 'loop_003_autospawned']);
@@ -239,8 +239,7 @@ export default function Playground() {
     const fetchProjectStatus = async () => {
       try {
         setLoading(true);
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-2639.up.railway.app';
-        const response = await fetch(`${apiUrl}/api/system/status?project_id=${projectId}`);
+        const response = await fetch(`${BACKEND_URL}/api/system/status?project_id=${projectId}`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch project status: ${response.status}`);
@@ -304,8 +303,7 @@ export default function Playground() {
     // Fetch project state
     const fetchProjectState = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-2639.up.railway.app';
-        const response = await fetch(`${apiUrl}/api/project/state?project_id=${projectId}`);
+        const response = await fetch(`${BACKEND_URL}/api/project/state?project_id=${projectId}`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch project state: ${response.status}`);
@@ -465,79 +463,64 @@ export default function Playground() {
               cursor: 'pointer'
             }}
           >
-            <option value="">Select a project</option>
-            {projectList.map(id => (
-              <option key={id} value={id}>{id}</option>
+            <option value="" disabled>Select a project...</option>
+            {projectList.map(project => (
+              <option key={project} value={project}>{project}</option>
             ))}
           </select>
         </div>
         
-        {/* Prompt input for orchestrator */}
+        {/* Prompt input */}
         <div className="prompt-input" style={{
           width: '100%',
-          maxWidth: '500px',
-          marginBottom: '40px'
+          maxWidth: '600px',
+          marginBottom: '20px'
         }}>
           <textarea
-            placeholder="Describe your idea or goal..."
             value={userPrompt}
             onChange={(e) => setUserPrompt(e.target.value)}
+            placeholder="Enter your prompt here..."
             style={{
               width: '100%',
-              minHeight: '100px',
               padding: '15px',
-              backgroundColor: 'var(--secondary-bg)',
+              backgroundColor: 'var(--background)',
               color: 'var(--text)',
-              border: '1px solid #333',
+              border: '1px solid var(--highlight)',
               borderRadius: '4px',
-              resize: 'vertical',
-              fontFamily: 'inherit',
               fontSize: '16px',
-              marginBottom: '10px'
+              minHeight: '120px',
+              resize: 'vertical'
             }}
           />
+          
           <button
             onClick={submitToOrchestrator}
             disabled={!userPrompt.trim() || submittingPrompt}
             style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: userPrompt.trim() && !submittingPrompt ? 'var(--highlight)' : 'var(--secondary-bg)',
-              color: userPrompt.trim() && !submittingPrompt ? 'var(--background)' : 'var(--text-secondary)',
+              marginTop: '10px',
+              padding: '12px 20px',
+              backgroundColor: 'var(--highlight)',
+              color: 'var(--background)',
               border: 'none',
               borderRadius: '4px',
-              cursor: userPrompt.trim() && !submittingPrompt ? 'pointer' : 'not-allowed',
               fontSize: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              cursor: userPrompt.trim() && !submittingPrompt ? 'pointer' : 'not-allowed',
               opacity: userPrompt.trim() && !submittingPrompt ? 1 : 0.7
             }}
           >
-            <span style={{ marginRight: '8px' }}>🧠</span>
-            {submittingPrompt ? 'Processing...' : 'Send to Orchestrator'}
+            {submittingPrompt ? `Processing${'.'.repeat(dotCount)}` : 'Send to Orchestrator'}
           </button>
         </div>
         
-        {/* Console-style subtext */}
-        <div className="console-text" style={{
+        {/* Console subtext */}
+        <div className="console-subtext" style={{
           fontFamily: 'monospace',
           fontSize: '14px',
           color: 'var(--text-secondary)',
-          marginTop: '20px'
+          opacity: 0.7
         }}>
-          <div>[ System standing by. ]</div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            [ Awaiting input{'.'.repeat(dotCount)} ]
-            <span className="cursor" style={{
-              display: 'inline-block',
-              width: '8px',
-              height: '16px',
-              backgroundColor: 'var(--highlight)',
-              marginLeft: '5px',
-              animation: 'blink 1s step-end infinite'
-            }}></span>
-          </div>
+          <div>System standing by</div>
+          <div>Awaiting input{'.'.repeat(dotCount)}</div>
         </div>
       </div>
     );
@@ -545,363 +528,144 @@ export default function Playground() {
 
   return (
     <div className="playground-container" style={{
-      height: '100vh',
-      width: '100%',
       display: 'flex',
       flexDirection: 'column',
+      height: '100vh',
       overflow: 'hidden'
     }}>
-      {projectId && (
-        <PlaygroundStatusPanel 
-          projectId={projectId}
-          projectList={projectList}
-          onProjectChange={handleProjectChange}
-          onResetView={handleResetView}
-          loopCount={projectData?.loop_count || 0}
-          nextStep={projectData?.next_recommended_step || 'Initializing...'}
-          lastCompletedAgent={projectData?.last_completed_agent || 'None'}
-        />
-      )}
-      
-      {/* Return to Console Button - Only visible when a project is selected */}
-      {projectId && (
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          right: '10px',
-          zIndex: 100
-        }}>
-          <button 
+      {/* Header */}
+      <header style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '10px 20px',
+        backgroundColor: 'var(--header-bg)',
+        borderBottom: '1px solid var(--border)'
+      }}>
+        <div className="logo" style={{ fontWeight: 'bold', fontSize: '18px' }}>
+          Promethios Playground
+        </div>
+        
+        {projectId && (
+          <button
             onClick={handleResetView}
             style={{
-              padding: '8px 16px',
-              backgroundColor: 'var(--highlight)',
-              color: 'var(--background)',
-              border: 'none',
+              padding: '8px 12px',
+              backgroundColor: 'transparent',
+              color: 'var(--text)',
+              border: '1px solid var(--border)',
               borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center'
+              cursor: 'pointer'
             }}
           >
-            <span style={{ marginRight: '6px' }}>🧠</span>
-            Console
+            Return to Console
           </button>
-        </div>
-      )}
+        )}
+      </header>
       
-      {!projectId ? (
-        // Cinematic intro landing page
-        renderLandingPage()
-      ) : (
-        <div className="playground-content" style={{
-          display: 'flex',
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          flex: 1,
-          overflow: 'hidden'
-        }}>
-          {/* Left Panel - Agent Feed (70% on desktop, 100% on mobile) */}
-          <div className="agent-feed-panel" style={{
-            flex: '1 1 70%',
-            minWidth: '300px',
-            padding: '20px',
-            overflowY: 'auto',
-            borderRight: '1px solid #333',
-            order: 1
-          }}>
-            {loading && !projectData ? (
-              <div className="loading">Loading agent data...</div>
-            ) : error ? (
-              <div className="error" style={{ color: 'var(--error)' }}>Error: {error}</div>
-            ) : (
-              <>
-                {/* Prompt Input for Orchestrator */}
-                <div className="prompt-input-section" style={{
-                  marginBottom: '30px',
-                  padding: '15px',
-                  backgroundColor: 'var(--secondary-bg)',
-                  borderRadius: '4px',
-                  border: '1px solid #333'
-                }}>
-                  <h3 style={{ marginTop: 0, marginBottom: '15px', color: 'var(--highlight)' }}>
-                    🧠 Conversational Orchestrator
-                  </h3>
-                  <div style={{ marginBottom: '10px' }}>
-                    <textarea
-                      placeholder="Describe your idea or goal..."
-                      value={userPrompt}
-                      onChange={(e) => setUserPrompt(e.target.value)}
-                      style={{
-                        width: '100%',
-                        minHeight: '80px',
-                        padding: '10px',
-                        backgroundColor: 'var(--background)',
-                        color: 'var(--text)',
-                        border: '1px solid #333',
-                        borderRadius: '4px',
-                        resize: 'vertical',
-                        fontFamily: 'inherit',
-                        fontSize: '14px'
-                      }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                      onClick={submitToOrchestrator}
-                      disabled={!userPrompt.trim() || submittingPrompt}
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: 'var(--highlight)',
-                        color: 'var(--background)',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: userPrompt.trim() && !submittingPrompt ? 'pointer' : 'not-allowed',
-                        fontSize: '14px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        opacity: userPrompt.trim() && !submittingPrompt ? 1 : 0.7
-                      }}
-                    >
-                      <span style={{ marginRight: '6px' }}>🧠</span>
-                      {submittingPrompt ? 'Processing...' : 'Send to Orchestrator'}
-                    </button>
-                  </div>
-                </div>
-
-                <AgentTimeline 
-                  completedSteps={projectData?.completed_steps || []}
-                  lastCompletedAgent={projectData?.last_completed_agent}
-                  activityFeed={activityFeed}
-                />
-                
-                {/* Loop Activity Feed */}
-                <div className="activity-feed" style={{
-                  marginTop: '30px',
-                  padding: '15px',
-                  backgroundColor: 'var(--secondary-bg)',
-                  borderRadius: '4px'
-                }}>
-                  <h3 style={{ marginBottom: '15px', color: 'var(--highlight)' }}>
-                    🔁 Loop Activity Feed
-                  </h3>
-                  
-                  {activityFeed.length === 0 ? (
-                    <div className="empty-state" style={{ textAlign: 'center', padding: '10px 0' }}>
-                      <p>No activity recorded yet.</p>
-                    </div>
-                  ) : (
-                    <div className="feed-items">
-                      {activityFeed.map((item, index) => (
-                        <div key={index} className="feed-item" style={{
-                          padding: '8px 0',
-                          borderBottom: index < activityFeed.length - 1 ? '1px solid #333' : 'none',
-                          display: 'flex',
-                          alignItems: 'flex-start'
-                        }}>
-                          <div className="feed-icon" style={{ marginRight: '10px', fontSize: '18px' }}>
-                            {item.agent === 'hal' ? '🤖' : 
-                             item.agent === 'nova' ? '🎨' : 
-                             item.agent === 'critic' ? '🔍' : 
-                             item.agent === 'ash' ? '📝' : 
-                             item.agent === 'sage' ? '🧠' : 
-                             item.agent === 'orchestrator' ? '🎭' : '🔁'}
-                          </div>
-                          <div className="feed-content" style={{ flex: 1 }}>
-                            <div className="feed-header" style={{ 
-                              display: 'flex', 
-                              justifyContent: 'space-between',
-                              fontSize: '12px',
-                              color: 'var(--text-secondary)',
-                              marginBottom: '4px'
-                            }}>
-                              <span>{item.agent.toUpperCase()}</span>
-                              <span>{new Date(item.timestamp).toLocaleTimeString()}</span>
-                            </div>
-                            <div className="feed-message">{item.action}</div>
-                            {item.details && (
-                              <div className="feed-details" style={{ 
-                                fontSize: '12px',
-                                color: 'var(--text-secondary)',
-                                marginTop: '4px'
-                              }}>
-                                {item.details}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-          
-          {/* Right Panel - File Tree (30% on desktop, 100% on mobile) */}
-          <div className="file-tree-panel" style={{
-            flex: '1 1 30%',
-            minWidth: '250px',
-            padding: '20px',
-            backgroundColor: 'var(--secondary-bg)',
-            overflowY: 'auto',
-            order: 2
-          }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              marginBottom: '16px'
+      {/* Main content */}
+      <div className="main-content" style={{
+        display: 'flex',
+        flexGrow: 1,
+        overflow: 'hidden'
+      }}>
+        {/* Show landing page if no project is selected */}
+        {!projectId ? (
+          renderLandingPage()
+        ) : (
+          <>
+            {/* Left panel - Agent timeline */}
+            <div className="left-panel" style={{
+              width: '300px',
+              borderRight: '1px solid var(--border)',
+              overflow: 'auto',
+              padding: '20px'
             }}>
-              <h3 style={{ color: 'var(--highlight)', margin: 0 }}>
-                Generated Files
-              </h3>
+              <h2>Agent Activity</h2>
+              <AgentTimeline activityFeed={activityFeed} />
               
-              <button 
-                onClick={handleDownloadZip}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: 'var(--highlight)',
-                  color: 'var(--background)',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-              >
-                <span style={{ marginRight: '6px' }}>⬇️</span>
-                Download ZIP
-              </button>
+              {/* Status panel */}
+              <PlaygroundStatusPanel 
+                projectId={projectId}
+                projectData={projectData}
+                loading={loading}
+                error={error}
+                onProjectChange={handleProjectChange}
+                projectList={projectList}
+              />
             </div>
             
-            {loading && !projectState ? (
-              <div className="loading">Loading file tree...</div>
-            ) : error ? (
-              <div className="error" style={{ color: 'var(--error)' }}>Error: {error}</div>
-            ) : (
-              <>
-                <FileTree 
-                  files={projectState?.files_created || []} 
-                  onFileSelect={handleFileSelect}
-                  selectedFile={selectedFile}
-                />
-                
-                {/* File Preview */}
-                {selectedFile && (
-                  <div className="file-preview" style={{
-                    marginTop: '20px',
+            {/* Center panel - Content viewer */}
+            <div className="center-panel" style={{
+              flexGrow: 1,
+              padding: '20px',
+              overflow: 'auto'
+            }}>
+              <h2>Project Content</h2>
+              {selectedFile ? (
+                <div className="file-content">
+                  <h3>{selectedFile}</h3>
+                  <pre style={{
+                    backgroundColor: 'var(--code-bg)',
                     padding: '15px',
-                    backgroundColor: 'var(--background)',
                     borderRadius: '4px',
-                    border: '1px solid #333'
+                    overflow: 'auto'
                   }}>
-                    <h4 style={{ marginTop: 0, marginBottom: '10px' }}>
-                      {selectedFile}
-                    </h4>
-                    <pre style={{
-                      backgroundColor: 'var(--background)',
-                      padding: '10px',
-                      borderRadius: '4px',
-                      overflowX: 'auto',
-                      fontSize: '12px',
-                      lineHeight: 1.5
-                    }}>
-                      {fileContent}
-                    </pre>
-                  </div>
-                )}
-                
-                {/* Documentation Section */}
-                {projectState?.docs_generated && projectState.docs_generated.length > 0 && (
-                  <div className="docs-section" style={{
-                    marginTop: '30px',
-                    padding: '15px',
-                    backgroundColor: 'var(--background)',
+                    {fileContent}
+                  </pre>
+                </div>
+              ) : (
+                <div className="no-file-selected" style={{
+                  padding: '20px',
+                  textAlign: 'center',
+                  color: 'var(--text-secondary)'
+                }}>
+                  <p>Select a file from the file tree to view its content.</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Right panel - File tree */}
+            <div className="right-panel" style={{
+              width: '300px',
+              borderLeft: '1px solid var(--border)',
+              overflow: 'auto',
+              padding: '20px'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '15px'
+              }}>
+                <h2>Generated Files</h2>
+                <button
+                  onClick={handleDownloadZip}
+                  style={{
+                    padding: '6px 10px',
+                    backgroundColor: 'var(--highlight)',
+                    color: 'var(--background)',
+                    border: 'none',
                     borderRadius: '4px',
-                    border: '1px solid #333'
-                  }}>
-                    <h3 style={{ marginTop: 0, marginBottom: '15px', color: 'var(--highlight)' }}>
-                      Documentation
-                    </h3>
-                    
-                    {projectState.docs_generated.map((doc, index) => (
-                      <div key={index} className="doc-item" style={{
-                        marginBottom: '15px',
-                        padding: '10px',
-                        backgroundColor: 'var(--secondary-bg)',
-                        borderRadius: '4px'
-                      }}>
-                        <h4 style={{ marginTop: 0, marginBottom: '10px' }}>
-                          {doc.title || `Document ${index + 1}`}
-                        </h4>
-                        <div className="markdown-content" style={{
-                          lineHeight: 1.5
-                        }}>
-                          {doc.content || 'No content available'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Feedback Section */}
-                {projectState?.feedback_log && projectState.feedback_log.length > 0 && (
-                  <div className="feedback-section" style={{
-                    marginTop: '30px',
-                    padding: '15px',
-                    backgroundColor: 'var(--background)',
-                    borderRadius: '4px',
-                    border: '1px solid #333'
-                  }}>
-                    <h3 style={{ marginTop: 0, marginBottom: '15px', color: 'var(--highlight)' }}>
-                      Feedback Log
-                    </h3>
-                    
-                    {projectState.feedback_log.map((feedback, index) => (
-                      <div key={index} className="feedback-item" style={{
-                        marginBottom: '15px',
-                        padding: '10px',
-                        backgroundColor: 'var(--secondary-bg)',
-                        borderRadius: '4px',
-                        borderLeft: '4px solid var(--highlight)'
-                      }}>
-                        <div className="feedback-header" style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between',
-                          marginBottom: '8px'
-                        }}>
-                          <h4 style={{ margin: 0 }}>
-                            {feedback.title || `Feedback ${index + 1}`}
-                          </h4>
-                          <span style={{ 
-                            padding: '2px 6px',
-                            backgroundColor: 'var(--highlight)',
-                            color: 'var(--background)',
-                            borderRadius: '4px',
-                            fontSize: '12px'
-                          }}>
-                            {feedback.type || 'CRITIC'}
-                          </span>
-                        </div>
-                        <div className="feedback-content" style={{
-                          lineHeight: 1.5
-                        }}>
-                          {feedback.content || 'No content available'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Orchestrator Response Modal */}
+                    fontSize: '14px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Download ZIP
+                </button>
+              </div>
+              
+              <FileTree 
+                projectState={projectState}
+                onFileSelect={handleFileSelect}
+                selectedFile={selectedFile}
+              />
+            </div>
+          </>
+        )}
+      </div>
+      
+      {/* Orchestrator response modal */}
       {showResponseModal && orchestratorResponse && (
         <div className="modal-overlay" style={{
           position: 'fixed',
@@ -917,82 +681,59 @@ export default function Playground() {
         }}>
           <div className="modal-content" style={{
             backgroundColor: 'var(--background)',
+            padding: '30px',
             borderRadius: '8px',
-            padding: '20px',
             maxWidth: '600px',
             width: '90%',
             maxHeight: '80vh',
-            overflowY: 'auto'
+            overflow: 'auto'
           }}>
-            <h2 style={{ color: 'var(--highlight)', marginTop: 0 }}>Orchestrator Response</h2>
-            
+            <h2>Orchestrator Response</h2>
             <div className="response-section" style={{ marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '16px' }}>Proposed Goal:</h3>
-              <p style={{ 
-                padding: '10px', 
-                backgroundColor: 'var(--secondary-bg)', 
-                borderRadius: '4px',
-                border: '1px solid var(--highlight)'
-              }}>
-                {orchestratorResponse.proposed_goal}
-              </p>
+              <h3>Proposed Goal</h3>
+              <p>{orchestratorResponse.proposed_goal}</p>
             </div>
             
-            {orchestratorResponse.challenge_insights && orchestratorResponse.challenge_insights.length > 0 && (
-              <div className="response-section" style={{ marginBottom: '20px' }}>
-                <h3 style={{ fontSize: '16px' }}>Challenge Insights:</h3>
-                <ul style={{ 
-                  padding: '10px 10px 10px 30px', 
-                  backgroundColor: 'var(--secondary-bg)', 
-                  borderRadius: '4px',
-                  margin: 0
-                }}>
-                  {orchestratorResponse.challenge_insights.map((insight, index) => (
-                    <li key={index} style={{ marginBottom: '5px' }}>{insight}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <div className="response-section" style={{ marginBottom: '20px' }}>
+              <h3>Challenge Insights</h3>
+              <ul>
+                {orchestratorResponse.challenge_insights?.map((insight, index) => (
+                  <li key={index}>{insight}</li>
+                ))}
+              </ul>
+            </div>
             
-            {orchestratorResponse.task_list && orchestratorResponse.task_list.length > 0 && (
-              <div className="response-section" style={{ marginBottom: '20px' }}>
-                <h3 style={{ fontSize: '16px' }}>Task Plan:</h3>
-                <ol style={{ 
-                  padding: '10px 10px 10px 30px', 
-                  backgroundColor: 'var(--secondary-bg)', 
-                  borderRadius: '4px',
-                  margin: 0
-                }}>
-                  {orchestratorResponse.task_list.map((task, index) => (
-                    <li key={index} style={{ marginBottom: '5px' }}>{task}</li>
-                  ))}
-                </ol>
-              </div>
-            )}
+            <div className="response-section" style={{ marginBottom: '30px' }}>
+              <h3>Task List</h3>
+              <ol>
+                {orchestratorResponse.task_list?.map((task, index) => (
+                  <li key={index}>{task}</li>
+                ))}
+              </ol>
+            </div>
             
-            <div className="modal-actions" style={{ 
-              display: 'flex', 
-              justifyContent: 'flex-end',
-              marginTop: '20px',
-              gap: '10px'
+            <div className="modal-actions" style={{
+              display: 'flex',
+              justifyContent: 'space-between'
             }}>
-              <button 
+              <button
                 onClick={() => setShowResponseModal(false)}
                 style={{
-                  padding: '8px 16px',
-                  backgroundColor: 'var(--background)',
+                  padding: '10px 15px',
+                  backgroundColor: 'transparent',
                   color: 'var(--text)',
-                  border: '1px solid #333',
+                  border: '1px solid var(--border)',
                   borderRadius: '4px',
                   cursor: 'pointer'
                 }}
               >
                 Cancel
               </button>
-              <button 
+              
+              <button
                 onClick={confirmOrchestratorResponse}
                 style={{
-                  padding: '8px 16px',
+                  padding: '10px 15px',
                   backgroundColor: 'var(--highlight)',
                   color: 'var(--background)',
                   border: 'none',
@@ -1006,14 +747,6 @@ export default function Playground() {
           </div>
         </div>
       )}
-      
-      {/* Add CSS for cursor blink animation */}
-      <style jsx global>{`
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-      `}</style>
     </div>
   );
 }
