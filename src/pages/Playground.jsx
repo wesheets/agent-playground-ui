@@ -71,6 +71,7 @@ export default function Playground() {
   // Download ZIP function
   const handleDownloadZip = async () => {
     try {
+      // Use direct backend URL to avoid 404 errors
       const response = await fetch(`${BACKEND_URL}/api/project/export_zip?project_id=${projectId}`);
       
       if (!response.ok) {
@@ -106,7 +107,7 @@ export default function Playground() {
     
     try {
       setSubmittingPrompt(true);
-      // Use the direct backend URL to avoid 404 errors on Vercel deployment
+      // Use direct backend URL to avoid 404 errors
       const response = await fetch(`${BACKEND_URL}/api/orchestrator/interpret`, {
         method: 'POST',
         headers: {
@@ -173,6 +174,7 @@ export default function Playground() {
     if (!orchestratorResponse) return;
     
     try {
+      // Use direct backend URL to avoid 404 errors
       const response = await fetch(`${BACKEND_URL}/api/project/start`, {
         method: 'POST',
         headers: {
@@ -239,6 +241,7 @@ export default function Playground() {
     const fetchProjectStatus = async () => {
       try {
         setLoading(true);
+        // Use direct backend URL to avoid 404 errors
         const response = await fetch(`${BACKEND_URL}/api/system/status?project_id=${projectId}`);
         
         if (!response.ok) {
@@ -303,6 +306,7 @@ export default function Playground() {
     // Fetch project state
     const fetchProjectState = async () => {
       try {
+        // Use direct backend URL to avoid 404 errors
         const response = await fetch(`${BACKEND_URL}/api/project/state?project_id=${projectId}`);
         
         if (!response.ok) {
