@@ -27,6 +27,12 @@ export default function Playground() {
   const prevLoopCountRef = useRef(0);
   const prevLastCompletedAgentRef = useRef(null);
   const prevFilesCreatedLengthRef = useRef(0);
+  
+  // Reference to track active polling intervals
+  const pollingRef = useRef({
+    status: null,
+    state: null
+  });
 
   // Animation effects for landing page
   useEffect(() => {
@@ -50,6 +56,16 @@ export default function Playground() {
 
   // Reset view function - Return to Console
   const handleResetView = () => {
+    // Clear polling intervals before resetting view
+    if (pollingRef.current.status) {
+      clearInterval(pollingRef.current.status);
+      pollingRef.current.status = null;
+    }
+    if (pollingRef.current.state) {
+      clearInterval(pollingRef.current.state);
+      pollingRef.current.state = null;
+    }
+    
     setProjectId(null);
     setProjectData(null);
     setProjectState(null);
@@ -59,13 +75,27 @@ export default function Playground() {
     setUserPrompt('');
     setOrchestratorResponse(null);
     setShowResponseModal(false);
+    
+    console.log('Polling intervals cleared and view reset');
   };
 
   // Handle project selection
   const handleProjectChange = (newProjectId) => {
+    // Clear polling intervals before switching projects
+    if (pollingRef.current.status) {
+      clearInterval(pollingRef.current.status);
+      pollingRef.current.status = null;
+    }
+    if (pollingRef.current.state) {
+      clearInterval(pollingRef.current.state);
+      pollingRef.current.state = null;
+    }
+    
     setProjectId(newProjectId);
     setSelectedFile(null);
     setFileContent(null);
+    
+    console.log(`Polling intervals cleared and switched to project: ${newProjectId}`);
   };
 
   // Download ZIP function
@@ -238,6 +268,16 @@ export default function Playground() {
   useEffect(() => {
     if (!projectId) return;
 
+    // Clear any existing polling intervals first
+    if (pollingRef.current.status) {
+      clearInterval(pollingRef.current.status);
+      pollingRef.current.status = null;
+    }
+    if (pollingRef.current.state) {
+      clearInterval(pollingRef.current.state);
+      pollingRef.current.state = null;
+    }
+
     const fetchProjectStatus = async () => {
       try {
         setLoading(true);
@@ -325,13 +365,22 @@ export default function Playground() {
     fetchProjectState();
     
     // Then set up polling every 5 seconds
-    const statusIntervalId = setInterval(fetchProjectStatus, 5000);
-    const stateIntervalId = setInterval(fetchProjectState, 10000);
+    pollingRef.current.status = setInterval(fetchProjectStatus, 5000);
+    pollingRef.current.state = setInterval(fetchProjectState, 10000);
+    
+    console.log(`Started polling for project: ${projectId}`);
     
     // Clean up intervals on unmount or projectId change
     return () => {
-      clearInterval(statusIntervalId);
-      clearInterval(stateIntervalId);
+      if (pollingRef.current.status) {
+        clearInterval(pollingRef.current.status);
+        pollingRef.current.status = null;
+      }
+      if (pollingRef.current.state) {
+        clearInterval(pollingRef.current.state);
+        pollingRef.current.state = null;
+      }
+      console.log(`Stopped polling for project: ${projectId}`);
     };
   }, [projectId]);
 
