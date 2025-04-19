@@ -577,70 +577,118 @@ export default function Playground() {
         ) : (
           // Show agent view when a project is selected
           <>
-            {/* Three-panel layout with fixed proportions */}
+            {/* Two-panel layout with 70/30 split */}
             <div style={{
               display: 'flex',
               height: '100%',
               overflow: 'hidden'
             }}>
-              {/* Left panel - Agent activity */}
+              {/* Left panel - Agent activity - 70% width */}
               <div className="left-panel" style={{
-                width: '25%', // Fixed at 25% of the total width
+                width: '70%', // Changed from 25% to 70%
                 borderRight: '1px solid var(--border)',
                 overflow: 'auto',
                 padding: '20px',
                 display: 'flex',
                 flexDirection: 'column'
               }}>
-                <h2>Agent Activity</h2>
-                <h3 style={{ color: 'var(--highlight)' }}>Agent Activity</h3>
+                {/* Conversational Orchestrator */}
+                <div className="orchestrator-section" style={{
+                  marginBottom: '20px',
+                  padding: '15px',
+                  backgroundColor: 'var(--secondary-bg)',
+                  borderRadius: '8px'
+                }}>
+                  <h3 style={{ 
+                    marginBottom: '10px',
+                    color: 'var(--highlight)',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <span style={{ marginRight: '8px' }}>🎭</span>
+                    Conversational Orchestrator
+                  </h3>
+                  
+                  <textarea
+                    value={userPrompt}
+                    onChange={(e) => setUserPrompt(e.target.value)}
+                    placeholder="I want to build a journal app that syncs across devices and has an AI mood tracker."
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      backgroundColor: 'var(--background)',
+                      color: 'var(--text)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      minHeight: '80px',
+                      resize: 'vertical',
+                      marginBottom: '10px'
+                    }}
+                  />
+                  
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={submitToOrchestrator}
+                      disabled={submittingPrompt || !userPrompt.trim()}
+                      style={{
+                        padding: '8px 15px',
+                        backgroundColor: 'var(--highlight)',
+                        color: 'var(--background)',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        cursor: submittingPrompt || !userPrompt.trim() ? 'not-allowed' : 'pointer',
+                        opacity: submittingPrompt || !userPrompt.trim() ? 0.7 : 1
+                      }}
+                    >
+                      {submittingPrompt ? `Processing${'.'.repeat(dotCount)}` : 'Send to Orchestrator'}
+                    </button>
+                  </div>
+                </div>
                 
-                <AgentTimeline 
-                  activityFeed={activityFeed}
-                  projectData={projectData}
-                />
+                <h2 style={{ marginBottom: '20px' }}>Agent Activity</h2>
                 
+                {/* Status Panel */}
                 {projectData && (
                   <PlaygroundStatusPanel 
                     projectData={projectData}
                     loading={loading}
                   />
                 )}
-              </div>
-              
-              {/* Center panel - Content viewer */}
-              <div className="center-panel" style={{
-                width: '50%', // Fixed at 50% of the total width
-                padding: '20px',
-                overflow: 'auto'
-              }}>
-                <h2>Project Content</h2>
-                {selectedFile ? (
-                  <div className="file-content">
-                    <h3>{selectedFile}</h3>
+                
+                {/* Agent Timeline */}
+                <AgentTimeline 
+                  activityFeed={activityFeed}
+                  projectData={projectData}
+                />
+                
+                {/* File Content Viewer - Moved from center panel */}
+                {selectedFile && (
+                  <div className="file-content" style={{
+                    marginTop: '20px',
+                    padding: '15px',
+                    backgroundColor: 'var(--secondary-bg)',
+                    borderRadius: '8px'
+                  }}>
+                    <h3 style={{ marginBottom: '10px' }}>{selectedFile}</h3>
                     <pre style={{
                       backgroundColor: 'var(--code-bg)',
                       padding: '15px',
                       borderRadius: '4px',
-                      overflow: 'auto'
+                      overflow: 'auto',
+                      fontSize: '14px',
+                      lineHeight: 1.5
                     }}>
                       {fileContent}
                     </pre>
                   </div>
-                ) : (
-                  <div className="no-file-selected" style={{
-                    padding: '20px',
-                    textAlign: 'center',
-                    color: 'var(--text-secondary)'
-                  }}>
-                    <p>Select a file from the file tree to view its content.</p>
-                  </div>
                 )}
               </div>
               
-              {/* Right panel - File tree */}
+              {/* Right panel - File tree - 30% width */}
               <div className="right-panel" style={{
-                width: '25%', // Fixed at 25% of the total width
+                width: '30%', // Changed from 25% to 30%
                 borderLeft: '1px solid var(--border)',
                 overflow: 'auto',
                 padding: '20px'
