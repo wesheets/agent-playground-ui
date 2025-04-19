@@ -98,8 +98,20 @@ export default function Playground() {
     console.log(`Polling intervals cleared and switched to project: ${newProjectId}`);
   };
 
+  // Check if loop is active
+  const isLoopActive = () => {
+    if (!projectData) return false;
+    return projectData.loop_status === "running";
+  };
+
   // Download ZIP function
   const handleDownloadZip = async () => {
+    // Prevent download if loop is active
+    if (isLoopActive()) {
+      setError("Cannot download project while loop is active. Please wait for loop to complete.");
+      return;
+    }
+    
     try {
       // Use direct backend URL to avoid 404 errors
       const response = await fetch(`${BACKEND_URL}/api/project/export_zip?project_id=${projectId}`);
@@ -481,383 +493,405 @@ export default function Playground() {
             backgroundColor: 'rgba(0, 255, 200, 0.1)',
             width: '100%'
           }}>
-            <span style={{ marginRight: '10px' }}>🪶</span>
-            <span>The loop is idle — waiting for your intention.</span>
+            <span style={{ marginRight: '10px' }}>🔄</span>
+            <span>Waiting for input{'.'.repeat(dotCount)}</span>
           </div>
         </div>
         
-        <p style={{
-          fontSize: '16px',
+        <div className="prompt-container" style={{
+          width: '100%',
           maxWidth: '600px',
-          marginBottom: '30px',
-          lineHeight: 1.6
-        }}>
-          Select a project to begin cognition playback.<br />
-          Or open a prompt, and tell the system what you need.
-        </p>
-        
-        {/* Project selector */}
-        <div className="project-selector" style={{
-          marginBottom: '30px',
-          width: '100%',
-          maxWidth: '400px'
-        }}>
-          <select 
-            value=""
-            onChange={(e) => handleProjectChange(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 15px',
-              backgroundColor: 'var(--background)',
-              color: 'var(--text)',
-              border: '1px solid var(--highlight)',
-              borderRadius: '4px',
-              fontSize: '16px',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="" disabled>Select a project...</option>
-            {projectList.map(project => (
-              <option key={project} value={project}>{project}</option>
-            ))}
-          </select>
-        </div>
-        
-        {/* Prompt input */}
-        <div className="prompt-input" style={{
-          width: '100%',
-          maxWidth: '400px',
-          marginBottom: '20px'
+          marginBottom: '40px'
         }}>
           <textarea
             value={userPrompt}
             onChange={(e) => setUserPrompt(e.target.value)}
-            placeholder="Enter your prompt here..."
+            placeholder="Enter your goal or question..."
             style={{
               width: '100%',
-              padding: '15px',
-              backgroundColor: 'var(--background)',
+              padding: '16px',
+              borderRadius: '8px',
+              border: '1px solid var(--border)',
+              backgroundColor: 'var(--input-bg)',
               color: 'var(--text)',
-              border: '1px solid var(--highlight)',
-              borderRadius: '4px',
               fontSize: '16px',
-              minHeight: '100px',
-              resize: 'vertical'
+              minHeight: '120px',
+              resize: 'vertical',
+              marginBottom: '16px'
             }}
           />
+          
+          <button
+            onClick={submitToOrchestrator}
+            disabled={submittingPrompt || !userPrompt.trim()}
+            style={{
+              padding: '12px 24px',
+              borderRadius: '8px',
+              border: 'none',
+              backgroundColor: 'var(--highlight)',
+              color: 'white',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: submittingPrompt || !userPrompt.trim() ? 'not-allowed' : 'pointer',
+              opacity: submittingPrompt || !userPrompt.trim() ? 0.7 : 1
+            }}
+          >
+            {submittingPrompt ? 'Processing...' : 'Submit'}
+          </button>
         </div>
         
-        {/* Submit button */}
-        <button
-          onClick={submitToOrchestrator}
-          disabled={submittingPrompt || !userPrompt.trim()}
-          style={{
-            padding: '12px 25px',
-            backgroundColor: 'var(--highlight)',
-            color: 'var(--background)',
-            border: 'none',
-            borderRadius: '4px',
-            fontSize: '16px',
-            cursor: submittingPrompt || !userPrompt.trim() ? 'not-allowed' : 'pointer',
-            opacity: submittingPrompt || !userPrompt.trim() ? 0.7 : 1
-          }}
-        >
-          {submittingPrompt ? `Processing${'.'.repeat(dotCount)}` : 'Send to Orchestrator'}
-        </button>
-        
-        {/* Console subtext */}
-        <div className="console-subtext" style={{
-          marginTop: '40px',
-          fontSize: '14px',
-          color: 'var(--text-secondary)',
-          fontFamily: 'monospace'
+        <div className="project-selection" style={{
+          width: '100%',
+          maxWidth: '600px'
         }}>
-          <p>System standing by</p>
-          <p>Awaiting input{'.'.repeat(dotCount)}</p>
+          <h3 style={{
+            fontSize: '18px',
+            marginBottom: '16px',
+            color: 'var(--text)'
+          }}>
+            Or select an existing project:
+          </h3>
+          
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '12px',
+            justifyContent: 'center'
+          }}>
+            {projectList.map((id) => (
+              <button
+                key={id}
+                onClick={() => handleProjectChange(id)}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--card-bg)',
+                  color: 'var(--text)',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {id}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     );
   };
 
-  return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      backgroundColor: 'var(--background)',
-      color: 'var(--text)'
-    }}>
-      {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '10px 20px',
-        borderBottom: '1px solid var(--border)'
-      }}>
-        <h1>Promethios Playground</h1>
-        {projectId && (
-          <button
-            onClick={handleResetView}
-            style={{
-              padding: '8px 15px',
-              backgroundColor: 'transparent',
-              color: 'var(--text)',
-              border: '1px solid var(--border)',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Return to Console
-          </button>
-        )}
-      </div>
-      
-      {/* Main content */}
-      <div style={{
+  // Render the agent playground view
+  const renderAgentPlayground = () => {
+    return (
+      <div className="playground-container" style={{
         display: 'flex',
         flexDirection: 'column',
-        flexGrow: 1,
-        overflow: 'hidden'
+        height: '100vh',
+        overflow: 'hidden',
+        background: 'var(--background)',
+        color: 'var(--text)'
       }}>
-        {!projectId ? (
-          // Show landing page when no project is selected
-          renderLandingPage()
-        ) : (
-          // Show agent view when a project is selected
-          <>
-            {/* Two-panel layout with 70/30 split */}
-            <div style={{
-              display: 'flex',
-              height: '100%',
-              overflow: 'hidden'
-            }}>
-              {/* Left panel - Agent activity - 70% width */}
-              <div className="left-panel" style={{
-                width: '70%', // Changed from 25% to 70%
-                borderRight: '1px solid var(--border)',
-                overflow: 'auto',
-                padding: '20px',
-                display: 'flex',
-                flexDirection: 'column'
-              }}>
-                {/* Conversational Orchestrator */}
-                <div className="orchestrator-section" style={{
-                  marginBottom: '20px',
-                  padding: '15px',
-                  backgroundColor: 'var(--secondary-bg)',
-                  borderRadius: '8px'
-                }}>
-                  <h3 style={{ 
-                    marginBottom: '10px',
-                    color: 'var(--highlight)',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    <span style={{ marginRight: '8px' }}>🎭</span>
-                    Conversational Orchestrator
-                  </h3>
-                  
-                  <textarea
-                    value={userPrompt}
-                    onChange={(e) => setUserPrompt(e.target.value)}
-                    placeholder="I want to build a journal app that syncs across devices and has an AI mood tracker."
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      backgroundColor: 'var(--background)',
-                      color: 'var(--text)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '4px',
-                      fontSize: '14px',
-                      minHeight: '80px',
-                      resize: 'vertical',
-                      marginBottom: '10px'
-                    }}
-                  />
-                  
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                      onClick={submitToOrchestrator}
-                      disabled={submittingPrompt || !userPrompt.trim()}
-                      style={{
-                        padding: '8px 15px',
-                        backgroundColor: 'var(--highlight)',
-                        color: 'var(--background)',
-                        border: 'none',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        cursor: submittingPrompt || !userPrompt.trim() ? 'not-allowed' : 'pointer',
-                        opacity: submittingPrompt || !userPrompt.trim() ? 0.7 : 1
-                      }}
-                    >
-                      {submittingPrompt ? `Processing${'.'.repeat(dotCount)}` : 'Send to Orchestrator'}
-                    </button>
-                  </div>
-                </div>
-                
-                <h2 style={{ marginBottom: '20px' }}>Agent Activity</h2>
-                
-                {/* Status Panel */}
-                {projectData && (
-                  <PlaygroundStatusPanel 
-                    projectData={projectData}
-                    loading={loading}
-                  />
-                )}
-                
-                {/* Agent Timeline */}
-                <AgentTimeline 
-                  activityFeed={activityFeed}
-                  projectData={projectData}
-                />
-                
-                {/* File Content Viewer - Moved from center panel */}
-                {selectedFile && (
-                  <div className="file-content" style={{
-                    marginTop: '20px',
-                    padding: '15px',
-                    backgroundColor: 'var(--secondary-bg)',
-                    borderRadius: '8px'
-                  }}>
-                    <h3 style={{ marginBottom: '10px' }}>{selectedFile}</h3>
-                    <pre style={{
-                      backgroundColor: 'var(--code-bg)',
-                      padding: '15px',
-                      borderRadius: '4px',
-                      overflow: 'auto',
-                      fontSize: '14px',
-                      lineHeight: 1.5
-                    }}>
-                      {fileContent}
-                    </pre>
-                  </div>
-                )}
-              </div>
-              
-              {/* Right panel - File tree - 30% width */}
-              <div className="right-panel" style={{
-                width: '30%', // Changed from 25% to 30%
-                borderLeft: '1px solid var(--border)',
-                overflow: 'auto',
-                padding: '20px'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '15px'
-                }}>
-                  <h2>Generated Files</h2>
-                  <button
-                    onClick={handleDownloadZip}
-                    style={{
-                      padding: '6px 10px',
-                      backgroundColor: 'var(--highlight)',
-                      color: 'var(--background)',
-                      border: 'none',
-                      borderRadius: '4px',
-                      fontSize: '14px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Download ZIP
-                  </button>
-                </div>
-                
-                <FileTree 
-                  projectState={projectState}
-                  onFileSelect={handleFileSelect}
-                  selectedFile={selectedFile}
-                />
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-      
-      {/* Orchestrator response modal */}
-      {showResponseModal && orchestratorResponse && (
-        <div className="modal-overlay" style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        {/* Status Bar */}
+        <div className="status-bar" style={{
           display: 'flex',
-          justifyContent: 'center',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          zIndex: 1000
+          padding: '10px 20px',
+          backgroundColor: 'var(--header-bg)',
+          borderBottom: '1px solid var(--border)'
         }}>
-          <div className="modal-content" style={{
-            backgroundColor: 'var(--background)',
-            padding: '30px',
-            borderRadius: '8px',
-            maxWidth: '600px',
-            width: '90%',
-            maxHeight: '80vh',
-            overflow: 'auto'
+          <PlaygroundStatusPanel 
+            projectData={projectData} 
+            loading={loading} 
+            error={error}
+          />
+          
+          <div className="actions" style={{
+            display: 'flex',
+            gap: '10px'
           }}>
-            <h2>Orchestrator Response</h2>
-            <div className="response-section" style={{ marginBottom: '20px' }}>
-              <h3>Proposed Goal</h3>
-              <p>{orchestratorResponse.proposed_goal}</p>
-            </div>
+            <button
+              onClick={handleResetView}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '4px',
+                border: 'none',
+                backgroundColor: 'var(--button-secondary)',
+                color: 'var(--text)',
+                fontSize: '14px',
+                cursor: 'pointer'
+              }}
+            >
+              Return to Console
+            </button>
             
-            <div className="response-section" style={{ marginBottom: '20px' }}>
-              <h3>Challenge Insights</h3>
-              <ul>
-                {orchestratorResponse.challenge_insights?.map((insight, index) => (
-                  <li key={index}>{insight}</li>
-                ))}
-              </ul>
-            </div>
+            <button
+              onClick={handleDownloadZip}
+              disabled={isLoopActive()}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '4px',
+                border: 'none',
+                backgroundColor: isLoopActive() ? 'var(--button-disabled)' : 'var(--button-primary)',
+                color: 'white',
+                fontSize: '14px',
+                cursor: isLoopActive() ? 'not-allowed' : 'pointer',
+                opacity: isLoopActive() ? 0.7 : 1
+              }}
+              title={isLoopActive() ? "Cannot download while loop is active" : "Download project as ZIP"}
+            >
+              {isLoopActive() ? "Loop Active - Export Locked" : "Download ZIP"}
+            </button>
+          </div>
+        </div>
+        
+        {/* Orchestrator Input */}
+        <div className="orchestrator-input" style={{
+          padding: '15px 20px',
+          borderBottom: '1px solid var(--border)',
+          backgroundColor: 'var(--card-bg)'
+        }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <input
+              type="text"
+              value={userPrompt}
+              onChange={(e) => setUserPrompt(e.target.value)}
+              placeholder="Enter a new goal or question for the Conversational Orchestrator..."
+              style={{
+                flex: 1,
+                padding: '10px 15px',
+                borderRadius: '4px',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--input-bg)',
+                color: 'var(--text)',
+                fontSize: '14px'
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  submitToOrchestrator();
+                }
+              }}
+            />
             
-            <div className="response-section" style={{ marginBottom: '30px' }}>
-              <h3>Task List</h3>
-              <ol>
-                {orchestratorResponse.task_list?.map((task, index) => (
-                  <li key={index}>{task}</li>
-                ))}
-              </ol>
-            </div>
-            
-            <div className="modal-actions" style={{
-              display: 'flex',
-              justifyContent: 'space-between'
+            <button
+              onClick={submitToOrchestrator}
+              disabled={submittingPrompt || !userPrompt.trim()}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '4px',
+                border: 'none',
+                backgroundColor: 'var(--highlight)',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                cursor: submittingPrompt || !userPrompt.trim() ? 'not-allowed' : 'pointer',
+                opacity: submittingPrompt || !userPrompt.trim() ? 0.7 : 1
+              }}
+            >
+              {submittingPrompt ? 'Processing...' : 'Submit'}
+            </button>
+          </div>
+        </div>
+        
+        {/* Main Content Area - 70/30 Split */}
+        <div className="main-content" style={{
+          display: 'flex',
+          flex: 1,
+          overflow: 'hidden'
+        }}>
+          {/* Left Panel - Agent Activity (70%) */}
+          <div className="left-panel" style={{
+            width: '70%',
+            display: 'flex',
+            flexDirection: 'column',
+            borderRight: '1px solid var(--border)',
+            overflow: 'hidden'
+          }}>
+            <div className="panel-header" style={{
+              padding: '15px 20px',
+              borderBottom: '1px solid var(--border)',
+              backgroundColor: 'var(--card-bg)'
             }}>
-              <button
-                onClick={() => setShowResponseModal(false)}
-                style={{
-                  padding: '10px 15px',
-                  backgroundColor: 'transparent',
-                  color: 'var(--text)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
+              <h2 style={{ margin: 0, fontSize: '18px' }}>Agent Activity</h2>
+            </div>
+            
+            <div className="panel-content" style={{
+              flex: 1,
+              overflow: 'auto',
+              padding: '20px'
+            }}>
+              <AgentTimeline 
+                projectData={projectData} 
+                activityFeed={activityFeed}
+              />
               
-              <button
-                onClick={confirmOrchestratorResponse}
-                style={{
-                  padding: '10px 15px',
-                  backgroundColor: 'var(--highlight)',
-                  color: 'var(--background)',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Confirm & Start Project
-              </button>
+              {selectedFile && (
+                <div className="file-content" style={{
+                  marginTop: '20px',
+                  padding: '20px',
+                  backgroundColor: 'var(--card-bg)',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border)'
+                }}>
+                  <h3 style={{ marginTop: 0 }}>{selectedFile}</h3>
+                  <pre style={{
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    overflow: 'auto',
+                    maxHeight: '400px',
+                    padding: '15px',
+                    backgroundColor: 'var(--code-bg)',
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                  }}>
+                    {fileContent}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Right Panel - Generated Files (30%) */}
+          <div className="right-panel" style={{
+            width: '30%',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            <div className="panel-header" style={{
+              padding: '15px 20px',
+              borderBottom: '1px solid var(--border)',
+              backgroundColor: 'var(--card-bg)'
+            }}>
+              <h2 style={{ margin: 0, fontSize: '18px' }}>Generated Files</h2>
+            </div>
+            
+            <div className="panel-content" style={{
+              flex: 1,
+              overflow: 'auto',
+              padding: '20px'
+            }}>
+              <FileTree 
+                projectData={projectData} 
+                onFileSelect={handleFileSelect}
+                selectedFile={selectedFile}
+              />
             </div>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    );
+  };
+
+  // Render the orchestrator response modal
+  const renderResponseModal = () => {
+    if (!showResponseModal || !orchestratorResponse) return null;
+    
+    return (
+      <div className="modal-overlay" style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000
+      }}>
+        <div className="modal-content" style={{
+          backgroundColor: 'var(--card-bg)',
+          borderRadius: '8px',
+          padding: '30px',
+          maxWidth: '600px',
+          width: '90%',
+          maxHeight: '90vh',
+          overflow: 'auto'
+        }}>
+          <h2 style={{ marginTop: 0, color: 'var(--highlight)' }}>Orchestrator Response</h2>
+          
+          <div style={{ marginBottom: '20px' }}>
+            <h3 style={{ marginBottom: '5px' }}>Your Input:</h3>
+            <p style={{ 
+              padding: '10px', 
+              backgroundColor: 'var(--input-bg)', 
+              borderRadius: '4px',
+              margin: '0'
+            }}>
+              {userPrompt}
+            </p>
+          </div>
+          
+          <div style={{ marginBottom: '20px' }}>
+            <h3 style={{ marginBottom: '5px' }}>Proposed Goal:</h3>
+            <p style={{ 
+              padding: '10px', 
+              backgroundColor: 'var(--code-bg)', 
+              borderRadius: '4px',
+              margin: '0'
+            }}>
+              {orchestratorResponse.proposed_goal}
+            </p>
+          </div>
+          
+          <div style={{ marginBottom: '30px' }}>
+            <h3 style={{ marginBottom: '5px' }}>Interpretation:</h3>
+            <p style={{ 
+              padding: '10px', 
+              backgroundColor: 'var(--code-bg)', 
+              borderRadius: '4px',
+              margin: '0'
+            }}>
+              {orchestratorResponse.interpretation}
+            </p>
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <button
+              onClick={() => setShowResponseModal(false)}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '4px',
+                border: 'none',
+                backgroundColor: 'var(--button-secondary)',
+                color: 'var(--text)',
+                fontSize: '14px',
+                cursor: 'pointer'
+              }}
+            >
+              Cancel
+            </button>
+            
+            <button
+              onClick={confirmOrchestratorResponse}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '4px',
+                border: 'none',
+                backgroundColor: 'var(--highlight)',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              Confirm & Start Project
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Main render
+  return (
+    <>
+      {projectId ? renderAgentPlayground() : renderLandingPage()}
+      {renderResponseModal()}
+    </>
   );
 }
