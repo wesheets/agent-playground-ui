@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-const FileTree = ({ files = [] }) => {
+const FileTree = ({ files = [], onFileSelect, selectedFile }) => {
+  const [expandedDirs, setExpandedDirs] = useState({});
+
   // Function to organize files into a tree structure
   const organizeFilesIntoTree = (fileList) => {
     const root = { name: '', children: {}, isDirectory: true };
@@ -29,6 +31,14 @@ const FileTree = ({ files = [] }) => {
     
     return root;
   };
+
+  // Toggle directory expansion
+  const toggleDirectory = (path) => {
+    setExpandedDirs(prev => ({
+      ...prev,
+      [path]: !prev[path]
+    }));
+  };
   
   // Function to render a directory and its contents
   const renderDirectory = (node, level = 0, index = 0) => {
@@ -39,6 +49,8 @@ const FileTree = ({ files = [] }) => {
       return a.name.localeCompare(b.name);
     });
     
+    const isExpanded = node.path ? expandedDirs[node.path] !== false : true;
+    
     return (
       <div key={node.path || 'root'} style={{ marginLeft: level > 0 ? '16px' : '0' }}>
         {node.name && (
@@ -48,26 +60,47 @@ const FileTree = ({ files = [] }) => {
               fontWeight: 'bold',
               color: 'var(--highlight)',
               marginTop: level > 0 ? '8px' : '0',
-              animation: `fadeIn 0.3s ease forwards ${index * 0.05}s`
+              animation: `fadeIn 0.3s ease forwards ${index * 0.05}s`,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center'
             }}
+            onClick={() => toggleDirectory(node.path)}
           >
+            <span style={{ marginRight: '5px' }}>
+              {isExpanded ? '📂' : '📁'}
+            </span>
             {node.name}/
           </div>
         )}
         
-        {sortedChildren.map((child, childIndex) => (
+        {isExpanded && sortedChildren.map((child, childIndex) => (
           child.isDirectory 
             ? renderDirectory(child, level + 1, childIndex) 
             : (
               <div 
                 key={child.path} 
-                className="file-name fade-in"
+                className={`file-name fade-in ${selectedFile === child.path ? 'selected' : ''}`}
                 style={{
                   marginLeft: '16px',
                   marginTop: '4px',
-                  animation: `fadeIn 0.3s ease forwards ${(childIndex + index) * 0.05}s`
+                  animation: `fadeIn 0.3s ease forwards ${(childIndex + index) * 0.05}s`,
+                  cursor: 'pointer',
+                  padding: '3px 5px',
+                  borderRadius: '3px',
+                  backgroundColor: selectedFile === child.path ? 'rgba(0, 255, 200, 0.1)' : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center'
                 }}
+                onClick={() => onFileSelect && onFileSelect(child.path)}
               >
+                <span style={{ marginRight: '5px' }}>
+                  {child.name.endsWith('.js') || child.name.endsWith('.jsx') ? '📄' :
+                   child.name.endsWith('.css') ? '🎨' :
+                   child.name.endsWith('.md') ? '📝' :
+                   child.name.endsWith('.json') ? '📊' :
+                   child.name.endsWith('.html') ? '🌐' : '📄'}
+                </span>
                 {child.name}
               </div>
             )

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const AgentTimeline = ({ completedSteps = [], lastCompletedAgent = null }) => {
+const AgentTimeline = ({ completedSteps = [], lastCompletedAgent = null, activityFeed = [] }) => {
   // Agent emoji mapping
   const agentEmojis = {
     hal: '🤖',
@@ -84,6 +84,32 @@ const AgentTimeline = ({ completedSteps = [], lastCompletedAgent = null }) => {
               <div className="agent-output" style={{ lineHeight: '1.5' }}>
                 <p>{getAgentOutput(agent)}</p>
               </div>
+              
+              {/* Show related activity from the feed */}
+              {activityFeed.filter(item => item.agent === agent).length > 0 && (
+                <div className="agent-activity" style={{ 
+                  marginTop: '12px',
+                  padding: '8px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '14px' }}>Recent Activity:</h4>
+                  {activityFeed
+                    .filter(item => item.agent === agent)
+                    .slice(0, 3)
+                    .map((item, idx) => (
+                      <div key={idx} style={{ 
+                        marginBottom: idx < 2 ? '6px' : 0,
+                        paddingBottom: idx < 2 ? '6px' : 0,
+                        borderBottom: idx < 2 ? '1px solid rgba(255, 255, 255, 0.1)' : 'none'
+                      }}>
+                        {item.action}
+                      </div>
+                    ))
+                  }
+                </div>
+              )}
             </div>
           ))}
         </div>
