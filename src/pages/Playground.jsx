@@ -477,7 +477,7 @@ export default function Playground() {
         {/* Prompt input */}
         <div className="prompt-input" style={{
           width: '100%',
-          maxWidth: '600px',
+          maxWidth: '400px',
           marginBottom: '20px'
         }}>
           <textarea
@@ -492,69 +492,66 @@ export default function Playground() {
               border: '1px solid var(--highlight)',
               borderRadius: '4px',
               fontSize: '16px',
-              minHeight: '120px',
+              minHeight: '100px',
               resize: 'vertical'
             }}
           />
-          
-          <button
-            onClick={submitToOrchestrator}
-            disabled={!userPrompt.trim() || submittingPrompt}
-            style={{
-              marginTop: '10px',
-              padding: '12px 20px',
-              backgroundColor: 'var(--highlight)',
-              color: 'var(--background)',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '16px',
-              cursor: userPrompt.trim() && !submittingPrompt ? 'pointer' : 'not-allowed',
-              opacity: userPrompt.trim() && !submittingPrompt ? 1 : 0.7
-            }}
-          >
-            {submittingPrompt ? `Processing${'.'.repeat(dotCount)}` : 'Send to Orchestrator'}
-          </button>
         </div>
+        
+        {/* Submit button */}
+        <button
+          onClick={submitToOrchestrator}
+          disabled={submittingPrompt || !userPrompt.trim()}
+          style={{
+            padding: '12px 25px',
+            backgroundColor: 'var(--highlight)',
+            color: 'var(--background)',
+            border: 'none',
+            borderRadius: '4px',
+            fontSize: '16px',
+            cursor: submittingPrompt || !userPrompt.trim() ? 'not-allowed' : 'pointer',
+            opacity: submittingPrompt || !userPrompt.trim() ? 0.7 : 1
+          }}
+        >
+          {submittingPrompt ? `Processing${'.'.repeat(dotCount)}` : 'Send to Orchestrator'}
+        </button>
         
         {/* Console subtext */}
         <div className="console-subtext" style={{
-          fontFamily: 'monospace',
+          marginTop: '40px',
           fontSize: '14px',
           color: 'var(--text-secondary)',
-          opacity: 0.7
+          fontFamily: 'monospace'
         }}>
-          <div>System standing by</div>
-          <div>Awaiting input{'.'.repeat(dotCount)}</div>
+          <p>System standing by</p>
+          <p>Awaiting input{'.'.repeat(dotCount)}</p>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="playground-container" style={{
+    <div style={{
       display: 'flex',
       flexDirection: 'column',
       height: '100vh',
-      overflow: 'hidden'
+      backgroundColor: 'var(--background)',
+      color: 'var(--text)'
     }}>
       {/* Header */}
-      <header style={{
+      <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '10px 20px',
-        backgroundColor: 'var(--header-bg)',
         borderBottom: '1px solid var(--border)'
       }}>
-        <div className="logo" style={{ fontWeight: 'bold', fontSize: '18px' }}>
-          Promethios Playground
-        </div>
-        
+        <h1>Promethios Playground</h1>
         {projectId && (
           <button
             onClick={handleResetView}
             style={{
-              padding: '8px 12px',
+              padding: '8px 15px',
               backgroundColor: 'transparent',
               color: 'var(--text)',
               border: '1px solid var(--border)',
@@ -565,105 +562,118 @@ export default function Playground() {
             Return to Console
           </button>
         )}
-      </header>
+      </div>
       
       {/* Main content */}
-      <div className="main-content" style={{
+      <div style={{
         display: 'flex',
+        flexDirection: 'column',
         flexGrow: 1,
         overflow: 'hidden'
       }}>
-        {/* Show landing page if no project is selected */}
         {!projectId ? (
+          // Show landing page when no project is selected
           renderLandingPage()
         ) : (
+          // Show agent view when a project is selected
           <>
-            {/* Left panel - Agent timeline */}
-            <div className="left-panel" style={{
-              width: '300px',
-              borderRight: '1px solid var(--border)',
-              overflow: 'auto',
-              padding: '20px'
+            {/* Three-panel layout with fixed proportions */}
+            <div style={{
+              display: 'flex',
+              height: '100%',
+              overflow: 'hidden'
             }}>
-              <h2>Agent Activity</h2>
-              <AgentTimeline activityFeed={activityFeed} />
-              
-              {/* Status panel */}
-              <PlaygroundStatusPanel 
-                projectId={projectId}
-                projectData={projectData}
-                loading={loading}
-                error={error}
-                onProjectChange={handleProjectChange}
-                projectList={projectList}
-              />
-            </div>
-            
-            {/* Center panel - Content viewer */}
-            <div className="center-panel" style={{
-              flexGrow: 1,
-              padding: '20px',
-              overflow: 'auto'
-            }}>
-              <h2>Project Content</h2>
-              {selectedFile ? (
-                <div className="file-content">
-                  <h3>{selectedFile}</h3>
-                  <pre style={{
-                    backgroundColor: 'var(--code-bg)',
-                    padding: '15px',
-                    borderRadius: '4px',
-                    overflow: 'auto'
-                  }}>
-                    {fileContent}
-                  </pre>
-                </div>
-              ) : (
-                <div className="no-file-selected" style={{
-                  padding: '20px',
-                  textAlign: 'center',
-                  color: 'var(--text-secondary)'
-                }}>
-                  <p>Select a file from the file tree to view its content.</p>
-                </div>
-              )}
-            </div>
-            
-            {/* Right panel - File tree */}
-            <div className="right-panel" style={{
-              width: '300px',
-              borderLeft: '1px solid var(--border)',
-              overflow: 'auto',
-              padding: '20px'
-            }}>
-              <div style={{
+              {/* Left panel - Agent activity */}
+              <div className="left-panel" style={{
+                width: '25%', // Fixed at 25% of the total width
+                borderRight: '1px solid var(--border)',
+                overflow: 'auto',
+                padding: '20px',
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '15px'
+                flexDirection: 'column'
               }}>
-                <h2>Generated Files</h2>
-                <button
-                  onClick={handleDownloadZip}
-                  style={{
-                    padding: '6px 10px',
-                    backgroundColor: 'var(--highlight)',
-                    color: 'var(--background)',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Download ZIP
-                </button>
+                <h2>Agent Activity</h2>
+                <h3 style={{ color: 'var(--highlight)' }}>Agent Activity</h3>
+                
+                <AgentTimeline 
+                  activityFeed={activityFeed}
+                  projectData={projectData}
+                />
+                
+                {projectData && (
+                  <PlaygroundStatusPanel 
+                    projectData={projectData}
+                    loading={loading}
+                  />
+                )}
               </div>
               
-              <FileTree 
-                projectState={projectState}
-                onFileSelect={handleFileSelect}
-                selectedFile={selectedFile}
-              />
+              {/* Center panel - Content viewer */}
+              <div className="center-panel" style={{
+                width: '50%', // Fixed at 50% of the total width
+                padding: '20px',
+                overflow: 'auto'
+              }}>
+                <h2>Project Content</h2>
+                {selectedFile ? (
+                  <div className="file-content">
+                    <h3>{selectedFile}</h3>
+                    <pre style={{
+                      backgroundColor: 'var(--code-bg)',
+                      padding: '15px',
+                      borderRadius: '4px',
+                      overflow: 'auto'
+                    }}>
+                      {fileContent}
+                    </pre>
+                  </div>
+                ) : (
+                  <div className="no-file-selected" style={{
+                    padding: '20px',
+                    textAlign: 'center',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    <p>Select a file from the file tree to view its content.</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Right panel - File tree */}
+              <div className="right-panel" style={{
+                width: '25%', // Fixed at 25% of the total width
+                borderLeft: '1px solid var(--border)',
+                overflow: 'auto',
+                padding: '20px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '15px'
+                }}>
+                  <h2>Generated Files</h2>
+                  <button
+                    onClick={handleDownloadZip}
+                    style={{
+                      padding: '6px 10px',
+                      backgroundColor: 'var(--highlight)',
+                      color: 'var(--background)',
+                      border: 'none',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Download ZIP
+                  </button>
+                </div>
+                
+                <FileTree 
+                  projectState={projectState}
+                  onFileSelect={handleFileSelect}
+                  selectedFile={selectedFile}
+                />
+              </div>
             </div>
           </>
         )}
