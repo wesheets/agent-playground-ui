@@ -45,7 +45,7 @@ export default function Playground() {
     }
   }, [projectId]);
 
-  // Reset view function
+  // Reset view function - Return to Console
   const handleResetView = () => {
     setProjectId(null);
     setProjectData(null);
@@ -121,21 +121,43 @@ export default function Playground() {
       
       const data = await response.json();
       setOrchestratorResponse(data);
-      setShowResponseModal(true);
       
-      // Add to activity feed
-      const newAction = {
-        timestamp: new Date().toISOString(),
-        agent: 'orchestrator',
-        action: `Processed user prompt`,
-        details: userPrompt
-      };
-      
-      setActivityFeed(prev => {
-        const updatedFeed = [newAction, ...prev];
-        return updatedFeed.slice(0, 10); // Keep only the last 10 actions
-      });
-      
+      // Auto-set currentProjectId to the returned project_id and navigate to agent view
+      if (data.project_id) {
+        setProjectId(data.project_id);
+        
+        // Add to activity feed
+        const newAction = {
+          timestamp: new Date().toISOString(),
+          agent: 'orchestrator',
+          action: `Processed user prompt and created project`,
+          details: `Project: ${data.project_id} - Goal: ${data.proposed_goal}`
+        };
+        
+        setActivityFeed(prev => {
+          const updatedFeed = [newAction, ...prev];
+          return updatedFeed.slice(0, 10); // Keep only the last 10 actions
+        });
+        
+        // Clear prompt and close modal
+        setUserPrompt('');
+      } else {
+        // If no project_id is returned, show the response modal for confirmation
+        setShowResponseModal(true);
+        
+        // Add to activity feed
+        const newAction = {
+          timestamp: new Date().toISOString(),
+          agent: 'orchestrator',
+          action: `Processed user prompt`,
+          details: userPrompt
+        };
+        
+        setActivityFeed(prev => {
+          const updatedFeed = [newAction, ...prev];
+          return updatedFeed.slice(0, 10); // Keep only the last 10 actions
+        });
+      }
     } catch (err) {
       console.error('Error submitting prompt:', err);
       setError(`Prompt submission failed: ${err.message}`);
@@ -156,7 +178,7 @@ export default function Playground() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          project_id: `loop_${Date.now().toString().slice(-6)}`,
+          project_id: orchestratorResponse.project_id || `loop_${Date.now().toString().slice(-6)}`,
           goal: orchestratorResponse.proposed_goal,
           agent: 'orchestrator'
         }),
@@ -183,7 +205,7 @@ export default function Playground() {
         return updatedFeed.slice(0, 10);
       });
       
-      // Optionally switch to the new project
+      // Set the project ID to navigate to agent view
       if (data.project_id) {
         setProjectId(data.project_id);
       }
@@ -539,6 +561,34 @@ export default function Playground() {
           nextStep={projectData?.next_recommended_step || 'Initializing...'}
           lastCompletedAgent={projectData?.last_completed_agent || 'None'}
         />
+      )}
+      
+      {/* Return to Console Button - Only visible when a project is selected */}
+      {projectId && (
+        <div style={{
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          zIndex: 100
+        }}>
+          <button 
+            onClick={handleResetView}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: 'var(--highlight)',
+              color: 'var(--background)',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <span style={{ marginRight: '6px' }}>🧠</span>
+            Console
+          </button>
+        </div>
       )}
       
       {!projectId ? (
@@ -904,7 +954,7 @@ export default function Playground() {
               </div>
             )}
             
-            {orchestratorResponse.task_plan && orchestratorResponse.task_plan.length > 0 && (
+            {orchestratorResponse.task_list && orchestratorResponse.task_list.length > 0 && (
               <div className="response-section" style={{ marginBottom: '20px' }}>
                 <h3 style={{ fontSize: '16px' }}>Task Plan:</h3>
                 <ol style={{ 
@@ -913,7 +963,7 @@ export default function Playground() {
                   borderRadius: '4px',
                   margin: 0
                 }}>
-                  {orchestratorResponse.task_plan.map((task, index) => (
+                  {orchestratorResponse.task_list.map((task, index) => (
                     <li key={index} style={{ marginBottom: '5px' }}>{task}</li>
                   ))}
                 </ol>
